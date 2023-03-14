@@ -12,11 +12,8 @@ import SimpleITK as sitk
 import numpy as np
 import time,shutil
 from glob import iglob
-import os
-import argparse
 from matplotlib import pyplot as plt
-import json
-from tqdm import tqdm
+import os, json
 
 """
 8888888888 8888888 888      8888888888  .d8888b.  
@@ -38,7 +35,6 @@ def GetListFiles(folder_path, file_extension):
 
 def GetPatients(folder_path, time_point='T1', segmentationType='CB'):
     """Return a dictionary with patient id as key"""
-
     file_extension = ['.nii.gz','.nii','.nrrd','.nrrd.gz','.gipl','.gipl.gz']
     json_extension = ['.json']
     file_list = GetListFiles(folder_path, file_extension+json_extension)
@@ -65,6 +61,12 @@ def GetPatients(folder_path, time_point='T1', segmentationType='CB'):
 
     return patients
 
+def GetDictPatients(folder_t1_path, folder_t2_path, segmentationType='CB'):
+    """Return a dictionary with patients for both time points"""
+    patients_t1 = GetPatients(folder_t1_path, time_point='T1', segmentationType=segmentationType)
+    patients_t2 = GetPatients(folder_t2_path, time_point='T2', segmentationType=segmentationType)
+    patients = MergeDicts(patients_t1,patients_t2)
+    return patients
 
 def MergeDicts(dict1,dict2):
     """Merge t1 and t2 dictionaries for each patient"""
@@ -268,6 +270,7 @@ def ResampleImage(image, transform):
     return resampled_image
 
 def CorrectHisto(input_img,min_porcent=0.01,max_porcent = 0.99, i_min=-1500, i_max=4000):
+    """Correct the histogram of the image to have a better contrast"""
     input_img = sitk.Cast(input_img, sitk.sitkFloat32)
     img = sitk.GetArrayFromImage(input_img)
 
@@ -508,7 +511,7 @@ def MatrixRetrieval(TransformParameterMap):
     
     return final_transform
 
-def SimpleElastixReg(fixed_image, moving_image, outpath):
+def SimpleElastixReg(fixed_image, moving_image):
     """Get the transform to register two images using SimpleElastix registration method"""
     
     elastixImageFilter = sitk.ElastixImageFilter()
@@ -534,12 +537,7 @@ def SimpleElastixReg(fixed_image, moving_image, outpath):
 
     return resultImage, transformParameterMap
 
-def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,moving_seg_path,outpath,patient):
-    if os.path.exists(outpath):
-        shutil.rmtree(outpath)
-
-    if not os.path.exists(outpath):
-        os.makedirs(outpath)
+def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,moving_seg_path):
 
     # Copy T1 and T2 images to output directory
     # shutil.copyfile(fixed_image_path, os.path.join(outpath,patient+'_T1.nii.gz'))
@@ -557,10 +555,10 @@ def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,mov
 
     # Register images
     # tic = time.time()
-    resample_t2, TransformParamMap = SimpleElastixReg(fixed_image_masked, moving_image,outpath)
+    resample_t2, TransformParamMap = SimpleElastixReg(fixed_image_masked, moving_image)
     transform = MatrixRetrieval(TransformParamMap)
     # print('Registration time: ', round(time.time() - tic,2),'s')
-    sitk.WriteTransform(transform, os.path.join(outpath,patient+'_matrix.tfm'))
+    
 
     # Resample images and segmentations using the final transform
     # tic = time.time()
