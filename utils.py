@@ -520,7 +520,7 @@ def SimpleElastixReg(fixed_image, moving_image):
     elastixImageFilter.SetMovingImage(moving_image)
 
     parameterMapVector = sitk.VectorOfParameterMap()
-    parameterMapVector.append(sitk.GetDefaultParameterMap("affine"))
+    parameterMapVector.append(sitk.GetDefaultParameterMap("rigid"))
     parameterMapVector.append(sitk.GetDefaultParameterMap("rigid"))
     elastixImageFilter.SetParameterMap(parameterMapVector)
     
