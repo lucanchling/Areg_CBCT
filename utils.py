@@ -486,7 +486,7 @@ def SitkRegTransformNonGrowing(fixed_image, moving_image,outpath):
 
 def MatrixRetrieval(TransformParameterMap):
     Transforms = []
-    Matrix = np.zeros((4,4))
+    
     for ParameterMap in TransformParameterMap:
         if ParameterMap['Transform'][0] == 'AffineTransform':
             matrix = [float(i) for i in ParameterMap['TransformParameters']]
@@ -525,8 +525,7 @@ def SimpleElastixReg(fixed_image, moving_image):
     elastixImageFilter.SetParameterMap(parameterMapVector)
     
     elastixImageFilter.SetParameter("ErodeMask", "true")
-    elastixImageFilter.SetParameter("MaximumNumberOfIterations", "100")
-    # elastixImageFilter.SetParameter("NumberOfResolutions", "4")
+    elastixImageFilter.SetParameter("MaximumNumberOfIterations", "20000")
     
     tic = time.time()
     elastixImageFilter.Execute()
