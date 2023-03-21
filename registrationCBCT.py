@@ -8,11 +8,13 @@ from utils import *
 def main(args):
     t1_folder,t2_folder, output_dir = args.t1_folder, args.t2_folder, args.output_dir
 
-    patients = GetDictPatients(t1_folder,t2_folder,args.reg_type) 
-    if args.todo != []:
+    patients = GetDictPatients(t1_folder,t2_folder,args.reg_type)
+
+    liste_todo = args.todo.split(',')
+    if liste_todo != []:
         todo_patients = {}
-        for i in args.todo:
-            patient = list(patients.keys())[i-1]
+        for i in liste_todo:
+            patient = list(patients.keys())[int(i)-1]
             todo_patients[patient] = patients[patient]
         patients = todo_patients
     
@@ -48,7 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_dir', type=str, help='Path to folder containing output register T2 scans',default='/home/lucia/Desktop/Luc/DATA/AReg/SOPHIE/TEST/OUT/')
     parser.add_argument("--reg_type", type=str, help="Type of registration to perform", default='MAND', choices=['CB','MAND','MAX'])
     parser.add_argument("--print", type=bool, help="Print info", default=True)
-    parser.add_argument("--todo", type=list, help="What scan to do", default=[])
+    parser.add_argument("--todo", type=str, help="What scan to do", default='')
     args = parser.parse_args()
 
     main(args)
