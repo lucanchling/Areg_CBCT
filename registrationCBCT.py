@@ -9,8 +9,13 @@ def main(args):
     t1_folder,t2_folder, output_dir = args.t1_folder, args.t2_folder, args.output_dir
 
     patients = GetDictPatients(t1_folder,t2_folder,args.reg_type) 
-
-    # for patient,data in patients.items():
+    if args.todo != []:
+        todo_patients = {}
+        for i in args.todo:
+            patient = list(patients.keys())[i-1]
+            todo_patients[patient] = patients[patient]
+        patients = todo_patients
+    
     for i,(patient,data) in tqdm(enumerate(patients.items()),total=len(patients)):
         if args.print:
             print("="*70)
@@ -42,7 +47,8 @@ if __name__ == '__main__':
     parser.add_argument('--t2_folder', type=str, help='Path to folder containing input T2 scans',default='/home/lucia/Desktop/Luc/DATA/AReg/SOPHIE/TwinBlock/3_TB2Or/')
     parser.add_argument('--output_dir', type=str, help='Path to folder containing output register T2 scans',default='/home/lucia/Desktop/Luc/DATA/AReg/SOPHIE/TEST/OUT/')
     parser.add_argument("--reg_type", type=str, help="Type of registration to perform", default='MAND', choices=['CB','MAND','MAX'])
-    parser.add_argument("--print", type=bool, help="Print info", default=False)
+    parser.add_argument("--print", type=bool, help="Print info", default=True)
+    parser.add_argument("--todo", type=list, help="What scan to do", default=[])
     args = parser.parse_args()
 
     main(args)
