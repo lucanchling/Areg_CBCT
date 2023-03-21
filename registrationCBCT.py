@@ -9,9 +9,8 @@ def main(args):
     t1_folder,t2_folder, output_dir = args.t1_folder, args.t2_folder, args.output_dir
 
     patients = GetDictPatients(t1_folder,t2_folder,args.reg_type)
-
-    liste_todo = args.todo.split(',')
-    if liste_todo != []:
+    if args.todo != '':
+        liste_todo = args.todo.split(',')
         todo_patients = {}
         for i in liste_todo:
             patient = list(patients.keys())[int(i)-1]
