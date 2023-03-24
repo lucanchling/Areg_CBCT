@@ -43,7 +43,7 @@ def GetPatients(folder_path, time_point='T1', segmentationType='CB'):
     
     for file in file_list:
         basename = os.path.basename(file)
-        patient = basename.split('_Or')[0].split('_ScanReg')[0].split('_OR')[0].split('_MAND')[0].split('_MAX')[0].split('_CB')[0].split('_T1')[0].split('_T2')[0].split('.')[0].split('_lm')[0]
+        patient = basename.split('_Or')[0].split('_ScanReg')[0].split('_OR')[0].split('_MAND')[0].split('_MAX')[0].split('_CB')[0].split('.')[0].split('_lm')[0].split('_T2')[0].split('_T1')[0]
         
         if patient not in patients:
             patients[patient] = {}
@@ -61,11 +61,12 @@ def GetPatients(folder_path, time_point='T1', segmentationType='CB'):
 
     return patients
 
-def GetDictPatients(folder_t1_path, folder_t2_path, segmentationType='CB'):
+def GetDictPatients(folder_t1_path, folder_t2_path, segmentationType='CB',todo_str=''):
     """Return a dictionary with patients for both time points"""
     patients_t1 = GetPatients(folder_t1_path, time_point='T1', segmentationType=segmentationType)
     patients_t2 = GetPatients(folder_t2_path, time_point='T2', segmentationType=segmentationType)
     patients = MergeDicts(patients_t1,patients_t2)
+    patients = ModifiedDictPatients(patients, todo_str)
     return patients
 
 def MergeDicts(dict1,dict2):
@@ -77,6 +78,20 @@ def MergeDicts(dict1,dict2):
             patients[patient].update(dict2[patient])
         except KeyError:
             continue
+    return patients
+
+
+def ModifiedDictPatients(patients,todo_str):
+    """Modify the dictionary of patients to only keep the ones in the todo_str"""
+
+    if todo_str != '':
+        liste_todo = todo_str.split(',')
+        todo_patients = {}
+        for i in liste_todo:
+            patient = list(patients.keys())[int(i)-1]
+            todo_patients[patient] = patients[patient]
+        patients = todo_patients
+    
     return patients
 
 def search(path,*args):
@@ -343,148 +358,8 @@ def applyMask(image, mask):
 888   T88b 8888888888  "Y8888P88 8888888  "Y8888P"      888
 """
 
-def demons_registration(fixed_image, moving_image):
-    registration_method = sitk.ImageRegistrationMethod()
-
-    # Create initial identity transformation.
-    transform_to_displacement_field_filter = sitk.TransformToDisplacementFieldFilter()
-    transform_to_displacement_field_filter.SetReferenceImage(fixed_image)
-    # The image returned from the initial_transform_filter is transferred to the transform and cleared out.
-    initial_transform = sitk.DisplacementFieldTransform(transform_to_displacement_field_filter.Execute(sitk.Transform()))
-    
-    # Regularization (update field - viscous, total field - elastic).
-    initial_transform.SetSmoothingGaussianOnUpdate(varianceForUpdateField=0.0, varianceForTotalField=2.0) 
-    
-    registration_method.SetInitialTransform(initial_transform)
-
-    registration_method.SetMetricAsDemons(10) #intensities are equal if the difference is less than 10HU
-        
-    # Multi-resolution framework.            
-    registration_method.SetShrinkFactorsPerLevel(shrinkFactors = [4,2,1])
-    registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas = [8,4,0])    
-
-    registration_method.SetInterpolator(sitk.sitkLinear)
-    # If you have time, run this code using the ConjugateGradientLineSearch, otherwise run as is.   
-    # registration_method.SetOptimizerAsConjugateGradientLineSearch(learningRate=1.0, numberOfIterations=20, convergenceMinimumValue=1e-6, convergenceWindowSize=10)
-    registration_method.SetOptimizerAsGradientDescent(learningRate=1.0, numberOfIterations=1)#, convergenceMinimumValue=1e-6, convergenceWindowSize=10)
-    registration_method.SetOptimizerScalesFromPhysicalShift()
-        
-    return registration_method.Execute(fixed_image, moving_image)
-
-def MeanSquaresReg(fixed_image, moving_image, lr=1.0, nbIterations=500, initial_transform=None, sampling=None,shrinkFactors = [4,2,1],smoothingSigmas = [8,4,0]):
-    
-    registration_method = sitk.ImageRegistrationMethod()
-    
-    if initial_transform is None:
-        initial_transform = sitk.CenteredTransformInitializer(fixed_image, moving_image, sitk.Euler3DTransform(), sitk.CenteredTransformInitializerFilter.GEOMETRY)
-    registration_method.SetInitialTransform(initial_transform)
-
-    registration_method.SetMetricAsMeanSquares()
-    registration_method.SetInterpolator(sitk.sitkLinear)
-    registration_method.SetOptimizerAsGradientDescent(learningRate=lr, numberOfIterations=nbIterations)
-    registration_method.SetOptimizerScalesFromPhysicalShift()
-
-    if sampling is not None:
-        registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-        registration_method.SetMetricSamplingPercentage(sampling)
-    else:
-        registration_method.SetMetricSamplingStrategy(registration_method.NONE)
-
-    registration_method.SetShrinkFactorsPerLevel(shrinkFactors = shrinkFactors)
-    registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas = smoothingSigmas)
-
-    return registration_method.Execute(fixed_image, moving_image)
-
-def CorrelationReg(fixed_image, moving_image, lr=1.0, nbIterations=500, initial_transform=None, sampling=None,shrinkFactors = [4,2,1],smoothingSigmas = [8,4,0]):
-    
-    registration_method = sitk.ImageRegistrationMethod()
-    
-    if initial_transform is None:
-        initial_transform = sitk.CenteredTransformInitializer(fixed_image, moving_image, sitk.Euler3DTransform(), sitk.CenteredTransformInitializerFilter.GEOMETRY)
-    registration_method.SetInitialTransform(initial_transform)
-
-    registration_method.SetInterpolator(sitk.sitkLinear)
-    registration_method.SetOptimizerAsGradientDescent(learningRate=lr, numberOfIterations=nbIterations)
-    registration_method.SetOptimizerScalesFromPhysicalShift()
-
-    if sampling is not None:
-        registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-        registration_method.SetMetricSamplingPercentage(sampling)
-    else:
-        registration_method.SetMetricSamplingStrategy(registration_method.NONE)
-
-    registration_method.SetShrinkFactorsPerLevel(shrinkFactors = shrinkFactors)
-    registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas = smoothingSigmas)
-
-    return registration_method.Execute(fixed_image, moving_image)
-
-def MattesMutualInformationReg(fixed_image, moving_image,numberOfHistogramBins=50, lr=1.0, nbIterations=500, initial_transform=None, sampling=None,shrinkFactors = [4,2,1],smoothingSigmas = [8,4,0]):
-    
-    registration_method = sitk.ImageRegistrationMethod()
-    
-    if initial_transform is None:
-        initial_transform = sitk.CenteredTransformInitializer(fixed_image, moving_image, sitk.Euler3DTransform(), sitk.CenteredTransformInitializerFilter.GEOMETRY)
-    registration_method.SetInitialTransform(initial_transform)
-
-    registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=numberOfHistogramBins)
-    registration_method.SetInterpolator(sitk.sitkLinear)
-    registration_method.SetOptimizerAsGradientDescent(learningRate=lr, numberOfIterations=nbIterations)
-    registration_method.SetOptimizerScalesFromPhysicalShift()
-
-    if sampling is not None:
-        registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-        registration_method.SetMetricSamplingPercentage(sampling)
-    else:
-        registration_method.SetMetricSamplingStrategy(registration_method.NONE)
-
-    registration_method.SetShrinkFactorsPerLevel(shrinkFactors = shrinkFactors)
-    registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas = smoothingSigmas)
-
-    registration_method.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
-
-    return registration_method.Execute(fixed_image, moving_image)
-
-def SitkRegTransformNonGrowing(fixed_image, moving_image,outpath):
-    """Get the transform to register two images for a non growing patient using SimpleITK registration method"""
-
-    # First Registration Step
-    tic_global = time.time()
-    tic = time.time()
-    final_transform = MattesMutualInformationReg(fixed_image, moving_image, sampling=0.01, nbIterations=10000, lr=1, shrinkFactors=[4,2,1],smoothingSigmas=[2,1,0])
-    # sitk.WriteTransform(final_transform, outpath+'/trans1.tfm')
-    # sitk.WriteTransform(final_transform_1, outpath+'/final_transform_1.tfm')
-    # print('First Registration: {} sec'.format(round(time.time()-tic,2)))
-
-    # Second Registration Step
-    tic = time.time()
-    final_transform = MattesMutualInformationReg(fixed_image, moving_image, sampling=0.01, nbIterations=20000, lr=1e-4, shrinkFactors=[1], smoothingSigmas=[0], initial_transform=final_transform)
-    # sitk.WriteTransform(final_transform, outpath+'/trans2.tfm')
-    # print('Second Registration: {} sec'.format(round(time.time()-tic,2)))
-    
-    # Third Registration Step
-    tic = time.time()
-    # final_transform = CorrelationReg(fixed_image, moving_image, sampling=0.01, nbIterations=100, lr=1e-4, shrinkFactors=[1], smoothingSigmas=[0], initial_transform=final_transform)
-    # print('Third Registration: {} sec'.format(round(time.time()-tic,2)))
-    
-    # # Fourth Registration Step
-    # tic = time.time()
-    # final_transform = MattesMutualInformationReg(fixed_image, moving_image, sampling=0.01, nbIterations=100, lr=1e-2, shrinkFactors=[1], smoothingSigmas=[0], initial_transform=final_transform)
-    # print('Fourth Registration: {} sec'.format(round(time.time()-tic,2)))
-
-    # # Fifth Registration Step
-    # tic = time.time()
-    # final_transform = CorrelationReg(fixed_image, moving_image, sampling=0.01, nbIterations=25, lr=1e-3, shrinkFactors=[1], smoothingSigmas=[0], initial_transform=final_transform)
-    # print('Fifth Registration: {} sec'.format(round(time.time()-tic,2)))
-
-    tic = time.time()
-    # final_transform = CorrelationReg(fixed_image, moving_image, sampling=0.1, nbIterations=100, lr=1e-2, shrinkFactors=[1], smoothingSigmas=[0], initial_transform=final_transform)
-    
-    sitk.WriteTransform(final_transform, outpath+'/'+os.path.basename(outpath).split('_OutReg')[0]+'_trans.tfm')
-    print('Total Process Time: {} sec'.format(round(time.time()-tic_global,2)))
-    
-    return final_transform
-
 def MatrixRetrieval(TransformParameterMap):
+    """Retrieve the matrix from the transform parameter map"""
     Transforms = []
     
     for ParameterMap in TransformParameterMap:
@@ -526,6 +401,7 @@ def SimpleElastixReg(fixed_image, moving_image):
     
     elastixImageFilter.SetParameter("ErodeMask", "true")
     elastixImageFilter.SetParameter("MaximumNumberOfIterations", "20000")
+    # elastixImageFilter.SetParameter("NumberOfSpatialSamples", "100000")
     
     tic = time.time()
     elastixImageFilter.Execute()
