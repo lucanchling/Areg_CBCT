@@ -380,11 +380,34 @@ def MatrixRetrieval(TransformParameterMap):
             Transforms.append(transform)
     
     # Create a composite transform
-    final_transform = sitk.Transform()
-    for transform in Transforms:
-        final_transform.AddTransform(transform)
+    # final_transform = sitk.Transform()
+    # for transform in Transforms:
+    #     final_transform.AddTransform(transform)
     
-    return final_transform
+    return Transforms
+
+def SimpleElastixApprox(fixed_image, moving_image):
+    elastixImageFilter = sitk.ElastixImageFilter()
+    elastixImageFilter.LogToConsoleOff()
+    elastixImageFilter.SetFixedImage(fixed_image)
+    elastixImageFilter.SetMovingImage(moving_image)
+
+    parameterMapVector = sitk.VectorOfParameterMap()
+    parameterMapVector.append(sitk.GetDefaultParameterMap("rigid"))
+    elastixImageFilter.SetParameterMap(parameterMapVector)
+
+    elastixImageFilter.SetParameter("MaximumNumberOfIterations", "5000")
+    # elastixImageFilter.SetParameter("NumberOfSpatialSamples", "100000")
+    
+    tic = time.time()
+    elastixImageFilter.Execute()
+    # print('Process Time: {} sec'.format(round(time.time()-tic,2)))
+
+    resultImage = elastixImageFilter.GetResultImage()
+    transformParameterMap = elastixImageFilter.GetTransformParameterMap()
+
+    return resultImage, transformParameterMap
+
 
 def SimpleElastixReg(fixed_image, moving_image):
     """Get the transform to register two images using SimpleElastix registration method"""
@@ -396,11 +419,11 @@ def SimpleElastixReg(fixed_image, moving_image):
 
     parameterMapVector = sitk.VectorOfParameterMap()
     parameterMapVector.append(sitk.GetDefaultParameterMap("rigid"))
-    parameterMapVector.append(sitk.GetDefaultParameterMap("rigid"))
+    # parameterMapVector.append(sitk.GetDefaultParameterMap("rigid"))
     elastixImageFilter.SetParameterMap(parameterMapVector)
     
     elastixImageFilter.SetParameter("ErodeMask", "true")
-    elastixImageFilter.SetParameter("MaximumNumberOfIterations", "20000")
+    elastixImageFilter.SetParameter("MaximumNumberOfIterations", "10000")
     # elastixImageFilter.SetParameter("NumberOfSpatialSamples", "100000")
     
     tic = time.time()
@@ -429,12 +452,23 @@ def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,mov
     # moving_image_masked = applyMask(moving_image, moving_seg)
 
     # Register images
+
+    # Approximate registration
     # tic = time.time()
-    resample_t2, TransformParamMap = SimpleElastixReg(fixed_image_masked, moving_image)
-    transform = MatrixRetrieval(TransformParamMap)
+    resample_approx, TransformParamMap = SimpleElastixApprox(fixed_image, moving_image)
+    Transforms_Approx = MatrixRetrieval(TransformParamMap)
     # print('Registration time: ', round(time.time() - tic,2),'s')
     
+    # Fine tuning
+    # tic = time.time()
+    resample_t2, TransformParamMap = SimpleElastixReg(fixed_image_masked, resample_approx)
+    Transforms_Fine = MatrixRetrieval(TransformParamMap)
 
+    # Combine transforms
+    Transforms = Transforms_Approx + Transforms_Fine
+    transform = sitk.Transform()
+    for t in Transforms:
+        transform.AddTransform(t)
     # Resample images and segmentations using the final transform
     # tic = time.time()
     resample_t2 = sitk.Cast(ResampleImage(moving_image, transform),sitk.sitkInt16)
