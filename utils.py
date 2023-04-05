@@ -43,16 +43,18 @@ def GetPatients(folder_path, time_point='T1', segmentationType='CB'):
     
     for file in file_list:
         basename = os.path.basename(file)
-        patient = basename.split('_Or')[0].split('_ScanReg')[0].split('_OR')[0].split('_MAND')[0].split('_MAX')[0].split('_CB')[0].split('.')[0].split('_lm')[0].split('_T2')[0].split('_T1')[0]
+        patient = basename.split('_Or')[0].split('_ScanReg')[0].split('_OR')[0].split('_MAND')[0].split('_MAX')[0].split('_CB')[0].split('.')[0].split('_lm')[0].split('_T2')[0].split('_T1')[0].split('_Cl')[0]
         
         if patient not in patients:
             patients[patient] = {}
         
         if True in [i in basename for i in file_extension]:
-            if segmentationType+'MASK' in basename:
+            # if segmentationType+'MASK' in basename:
+            if 'Seg' in basename:
                 patients[patient]['seg'+time_point] = file
             
-            if 'MASK' not in basename:
+            # if 'MASK' not in basename:
+            if 'Scan' in basename:
                 patients[patient]['scan'+time_point] = file
 
         else:
@@ -435,7 +437,7 @@ def SimpleElastixReg(fixed_image, moving_image):
 
     return resultImage, transformParameterMap
 
-def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,moving_seg_path):
+def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,moving_seg_path,approx=False):
 
     # Copy T1 and T2 images to output directory
     # shutil.copyfile(fixed_image_path, os.path.join(outpath,patient+'_T1.nii.gz'))
@@ -444,6 +446,7 @@ def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,mov
     # Read images and segmentations
     fixed_image = sitk.ReadImage(fixed_image_path)
     fixed_seg = sitk.ReadImage(fixed_seg_path)
+    fixed_seg.SetOrigin(fixed_image.GetOrigin())
     moving_image = sitk.ReadImage(moving_image_path)
     moving_seg = sitk.ReadImage(moving_seg_path)
 
@@ -451,13 +454,19 @@ def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,mov
     fixed_image_masked = applyMask(fixed_image, fixed_seg)
     # moving_image_masked = applyMask(moving_image, moving_seg)
 
+    
     # Register images
+    Transforms = []
 
-    # Approximate registration
-    # tic = time.time()
-    resample_approx, TransformParamMap = SimpleElastixApprox(fixed_image, moving_image)
-    Transforms_Approx = MatrixRetrieval(TransformParamMap)
-    # print('Registration time: ', round(time.time() - tic,2),'s')
+    if approx:
+        # Approximate registration
+        # tic = time.time()
+        resample_approx, TransformParamMap = SimpleElastixApprox(fixed_image, moving_image)
+        Transforms_Approx = MatrixRetrieval(TransformParamMap)
+        # print('Registration time: ', round(time.time() - tic,2),'s')
+        Transforms = Transforms_Approx
+    else:
+        resample_approx = moving_image
     
     # Fine tuning
     # tic = time.time()
@@ -465,7 +474,7 @@ def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,mov
     Transforms_Fine = MatrixRetrieval(TransformParamMap)
 
     # Combine transforms
-    Transforms = Transforms_Approx + Transforms_Fine
+    Transforms += Transforms_Fine
     transform = sitk.Transform()
     for t in Transforms:
         transform.AddTransform(t)
