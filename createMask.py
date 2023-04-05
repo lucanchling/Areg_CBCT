@@ -32,7 +32,7 @@ def CloseCBCTSeg(input_img, closing_radius = 15):
 
     return output
 
-def Process(args,patients):
+def CreateMask(args,patients):
     for patient, data in tqdm(patients.items()):
         
         # t1_scan = sitk.ReadImage(data['scanT1'])
@@ -54,15 +54,16 @@ def Process(args,patients):
         
 
 def main(args):
-    patients = GetDictPatients(folder_t1_path=args.t1_folder, folder_t2_path=args.t2_folder,matrix_folder=args.matrix_folder)
+    data_dir = args.data_dir
+    t1_folder,t2_folder,matrix_folder = os.path.join(data_dir,args.reg_type,'T1'), os.path.join(data_dir,args.reg_type,'T2'), os.path.join(data_dir,args.reg_type,'Matrix')
 
-    Process(args,patients)
+    patients = GetDictPatients(folder_t1_path=t1_folder, folder_t2_path=t2_folder,matrix_folder=matrix_folder)
+
+    CreateMask(args,patients)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create mask for the CBCT')
-    parser.add_argument('--t1_folder', type=str, help='Folder with the T1 scans',default='/home/luciacev/Desktop/Luc_Anchling/DATA/AReg_CBCT/JJ/Approach2/MAND/T1')
-    parser.add_argument('--t2_folder', type=str, help='Folder with the T2 scans',default='/home/luciacev/Desktop/Luc_Anchling/DATA/AReg_CBCT/JJ/Approach2/MAND/T2')
-    parser.add_argument('--matrix_folder', type=str, help='Folder with the matrix',default='/home/luciacev/Desktop/Luc_Anchling/DATA/AReg_CBCT/JJ/Approach2/MAND/Matrix')
+    parser.add_argument('--data_dir', type=str, help='Folder with the matrix',default='/home/luciacev/Desktop/Luc_Anchling/DATA/AReg_CBCT/JJ/Approach2')
     parser.add_argument('--reg_type', type=str, help='Type of registration',choices=['MAND','CB','MAX'],default='MAND')
     args = parser.parse_args()
     main(args)
