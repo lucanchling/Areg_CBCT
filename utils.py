@@ -63,11 +63,30 @@ def GetPatients(folder_path, time_point='T1', segmentationType='CB'):
 
     return patients
 
-def GetDictPatients(folder_t1_path, folder_t2_path, segmentationType='CB',todo_str=''):
+def GetMatrixPatients(folder_path):
+    """Return a dictionary with patient id as key and matrix path as data"""
+    file_extension = ['.tfm']
+    file_list = GetListFiles(folder_path, file_extension)
+
+    patients = {}
+    for file in file_list:
+        basename = os.path.basename(file)
+        patient = basename.split("reg_")[1].split("_Cl")[0]
+        if patient not in patients and True in [i in basename for i in file_extension]:
+            patients[patient] = {}
+            patients[patient]['mat'] = file  
+
+    return patients
+
+def GetDictPatients(folder_t1_path, folder_t2_path, segmentationType='CB',todo_str='',matrix_folder=None):
     """Return a dictionary with patients for both time points"""
     patients_t1 = GetPatients(folder_t1_path, time_point='T1', segmentationType=segmentationType)
     patients_t2 = GetPatients(folder_t2_path, time_point='T2', segmentationType=segmentationType)
     patients = MergeDicts(patients_t1,patients_t2)
+        
+    if matrix_folder is not None:
+        patient_matrix = GetMatrixPatients(matrix_folder)
+        patients = MergeDicts(patients,patient_matrix)
     patients = ModifiedDictPatients(patients, todo_str)
     return patients
 
