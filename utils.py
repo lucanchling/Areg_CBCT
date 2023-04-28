@@ -12,7 +12,6 @@ import SimpleITK as sitk
 import numpy as np
 import time,shutil
 from glob import iglob
-from matplotlib import pyplot as plt
 import os, json
 
 """
@@ -26,6 +25,12 @@ import os, json
 888        8888888 88888888 8888888888  "Y8888P"
 """
 
+def GetListNamesSegType(segmentationType):
+    dic = {'CB':['cb'],
+           'MAND':['mand','md'],
+           'MAX':['max','mx'],}
+    return dic[segmentationType]
+
 def GetListFiles(folder_path, file_extension):
     """Return a list of files in folder_path finishing by file_extension"""
     file_list = []
@@ -33,7 +38,7 @@ def GetListFiles(folder_path, file_extension):
         file_list += search(folder_path,file_extension)[extension_type]
     return file_list
 
-def GetPatients(folder_path, time_point='T1', segmentationType='CB'):
+def GetPatients(folder_path, time_point='T1', segmentationType=None):
     """Return a dictionary with patient id as key"""
     file_extension = ['.nii.gz','.nii','.nrrd','.nrrd.gz','.gipl','.gipl.gz']
     json_extension = ['.json']
@@ -43,21 +48,24 @@ def GetPatients(folder_path, time_point='T1', segmentationType='CB'):
     
     for file in file_list:
         basename = os.path.basename(file)
-        patient = basename.split('_Or')[0].split('_ScanReg')[0].split('_OR')[0].split('_MAND')[0].split('_MAX')[0].split('_CB')[0].split('.')[0].split('_lm')[0].split('_T2')[0].split('_T1')[0].split('_Cl')[0]
+        patient = basename.split('_Scan')[0].split('_scan')[0].split('_Or')[0].split('_OR')[0].split('_MAND')[0].split('_MD')[0].split('_MAX')[0].split('_MX')[0].split('_CB')[0].split('_lm')[0].split('_T2')[0].split('_T1')[0].split('_Cl')[0].split('.')[0]
         
         if patient not in patients:
             patients[patient] = {}
         
         if True in [i in basename for i in file_extension]:
             # if segmentationType+'MASK' in basename:
-            if 'Seg' in basename:
-                patients[patient]['seg'+time_point] = file
-            
-            # if 'MASK' not in basename:
-            if 'Scan' in basename:
+            if True in [i in basename.lower() for i in ['mask','seg','pred']]:
+                if segmentationType is None:
+                    patients[patient]['seg'+time_point] = file
+                else:
+                    if True in [i in basename.lower() for i in GetListNamesSegType(segmentationType)]:
+                        patients[patient]['seg'+time_point] = file
+                
+            else:
                 patients[patient]['scan'+time_point] = file
 
-        else:
+        if True in [i in basename for i in json_extension]:
             if time_point == 'T2':
                 patients[patient]['lm'+time_point] = file
 
@@ -78,7 +86,7 @@ def GetMatrixPatients(folder_path):
 
     return patients
 
-def GetDictPatients(folder_t1_path, folder_t2_path, segmentationType='CB',todo_str='',matrix_folder=None):
+def GetDictPatients(folder_t1_path, folder_t2_path, segmentationType=None,todo_str='',matrix_folder=None):
     """Return a dictionary with patients for both time points"""
     patients_t1 = GetPatients(folder_t1_path, time_point='T1', segmentationType=segmentationType)
     patients_t2 = GetPatients(folder_t2_path, time_point='T2', segmentationType=segmentationType)
@@ -341,24 +349,6 @@ def CorrectHisto(input_img,min_porcent=0.01,max_porcent = 0.99, i_min=-1500, i_m
     image.CopyInformation(input_img)
 
     return image
-    
-
-def printHist(fixed_image, moving_image, fixed_masked_image, moving_masked_image):
-    """Print the histograms of the fixed and moving images"""
-    
-    fixed_image_array = sitk.GetArrayFromImage(fixed_image)
-    moving_image_array = sitk.GetArrayFromImage(moving_image)
-    fixed_masked_image_array = sitk.GetArrayFromImage(fixed_masked_image)
-    moving_masked_image_array = sitk.GetArrayFromImage(moving_masked_image)
-    
-    
-    plt.figure()
-    plt.hist(fixed_image_array.flatten(), bins=50, alpha=0.5, label='fixed')
-    plt.hist(moving_image_array.flatten(), bins=50, alpha=0.5, label='moving')
-    plt.hist(fixed_masked_image_array.flatten(), bins=50, alpha=0.5, label='fixed_masked')
-    plt.hist(moving_masked_image_array.flatten(), bins=50, alpha=0.5, label='moving_masked')
-    plt.legend(loc='upper right')
-    plt.show()
 
 def applyMask(image, mask):
     """Apply a mask to an image."""

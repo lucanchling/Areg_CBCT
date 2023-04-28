@@ -40,10 +40,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Voxel Based Registration')
     
-    parser.add_argument('--t1_folder', type=str, help='Path to folder containing input T1 scans',default='/home/lucia/Desktop/Luc/DATA/AReg/SOPHIE/TwinBlock/OUT1.5/Mandible/')
-    parser.add_argument('--t2_folder', type=str, help='Path to folder containing input T2 scans',default='/home/lucia/Desktop/Luc/DATA/AReg/SOPHIE/TwinBlock/3_TB2Or/')
-    parser.add_argument('--output_dir', type=str, help='Path to folder containing output register T2 scans',default='/home/lucia/Desktop/Luc/DATA/AReg/SOPHIE/TEST/OUT/')
-    parser.add_argument("--reg_type", type=str, help="Type of registration to perform", default='MAND', choices=['CB','MAND','MAX'])
+    parser.add_argument('--t1_folder', type=str, help='Path to folder containing input T1 scans',default='/home/luciacev/Documents/SlicerDownloads/AREG/AREG_CBCT/Test_Files/Semi-Automated/T1')
+    parser.add_argument('--t2_folder', type=str, help='Path to folder containing input T2 scans',default='/home/luciacev/Documents/SlicerDownloads/AREG/AREG_CBCT/Test_Files/Semi-Automated/T2')
+    parser.add_argument('--output_dir', type=str, help='Path to folder containing output register T2 scans',default='/home/luciacev/Documents/SlicerDownloads/AREG/AREG_CBCT/Test_Files/Semi-Automated/OUT')
+    parser.add_argument("--reg_type", type=str, help="Type of registration to perform", default=None, choices=['CB','MAND','MAX'])
     parser.add_argument("--print", type=bool, help="Print info", default=False)
     parser.add_argument("--todo", type=str, help="What scan to do", default='')
     parser.add_argument("--reg_lm", type=bool, help="Whether or not we apply the matrix to the landmark file", default=False)
