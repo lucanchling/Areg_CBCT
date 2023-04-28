@@ -40,14 +40,14 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Voxel Based Registration')
     
-    parser.add_argument('--t1_folder', type=str, help='Path to folder containing input T1 scans',default='/home/luciacev/Documents/SlicerDownloads/AREG/AREG_CBCT/Test_Files/Semi-Automated/T1')
-    parser.add_argument('--t2_folder', type=str, help='Path to folder containing input T2 scans',default='/home/luciacev/Documents/SlicerDownloads/AREG/AREG_CBCT/Test_Files/Semi-Automated/T2')
-    parser.add_argument('--output_dir', type=str, help='Path to folder containing output register T2 scans',default='/home/luciacev/Documents/SlicerDownloads/AREG/AREG_CBCT/Test_Files/Semi-Automated/OUT')
-    parser.add_argument("--reg_type", type=str, help="Type of registration to perform", default=None, choices=['CB','MAND','MAX'])
+    parser.add_argument('--t1_folder', type=str, help='Path to folder containing input T1 scans',default='/home/luciacev/Desktop/Luc/DATA/AReg_CBCT/NOT WORKING/T1/')
+    parser.add_argument('--t2_folder', type=str, help='Path to folder containing input T2 scans',default='/home/luciacev/Desktop/Luc/DATA/AReg_CBCT/NOT WORKING/T2_Center/')
+    parser.add_argument('--output_dir', type=str, help='Path to folder containing output register T2 scans',default='/home/luciacev/Desktop/Luc/DATA/AReg_CBCT/NOT WORKING/')
+    parser.add_argument("--reg_type", type=str, help="Type of registration to perform", default="CB", choices=['CB','MAND','MAX'])
     parser.add_argument("--print", type=bool, help="Print info", default=False)
     parser.add_argument("--todo", type=str, help="What scan to do", default='')
     parser.add_argument("--reg_lm", type=bool, help="Whether or not we apply the matrix to the landmark file", default=False)
-    parser.add_argument("--approx", type=bool, help="Whether or not we use the approximate method", default=False)
+    parser.add_argument("--approx", type=bool, help="Whether or not we use the approximate method", default=True)
     
     args = parser.parse_args()
 
