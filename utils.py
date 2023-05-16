@@ -48,7 +48,7 @@ def GetPatients(folder_path, time_point='T1', segmentationType=None):
     
     for file in file_list:
         basename = os.path.basename(file)
-        patient = basename.split('_Scan')[0].split('_scan')[0].split('_Or')[0].split('_OR')[0].split('_MAND')[0].split('_MD')[0].split('_MAX')[0].split('_MX')[0].split('_CB')[0].split('_lm')[0].split('_T2')[0].split('_T1')[0].split('_Cl')[0].split('.')[0].split('1')[0].split('2')[0]
+        patient = basename.split('_Scan')[0].split('_scan')[0].split('_Or')[0].split('_OR')[0].split('_MAND')[0].split('_MD')[0].split('_MAX')[0].split('_MX')[0].split('_CB')[0].split('_lm')[0].split('_T2')[0].split('_T1')[0].split('_Cl')[0].split('.')[0]
         
         if patient not in patients:
             patients[patient] = {}
@@ -447,7 +447,7 @@ def SimpleElastixReg(fixed_image, moving_image):
 
     return resultImage, transformParameterMap
 
-def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,moving_seg_path,approx=False):
+def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,approx=False):
 
     # Copy T1 and T2 images to output directory
     # shutil.copyfile(fixed_image_path, os.path.join(outpath,patient+'_T1.nii.gz'))
@@ -458,7 +458,7 @@ def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,mov
     fixed_seg = sitk.ReadImage(fixed_seg_path)
     fixed_seg.SetOrigin(fixed_image.GetOrigin())
     moving_image = sitk.ReadImage(moving_image_path)
-    moving_seg = sitk.ReadImage(moving_seg_path)
+    # moving_seg = sitk.ReadImage(moving_seg_path)
 
     # Apply mask to images
     fixed_image_masked = applyMask(fixed_image, fixed_seg)
@@ -491,7 +491,7 @@ def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,mov
     # Resample images and segmentations using the final transform
     # tic = time.time()
     resample_t2 = sitk.Cast(ResampleImage(moving_image, transform),sitk.sitkInt16)
-    resample_t2_seg = ResampleImage(moving_seg, transform)
+    # resample_t2_seg = ResampleImage(moving_seg, transform)
 
     
     # Compare segmentations
@@ -501,8 +501,29 @@ def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,mov
     # sitk.WriteImage(sitk.Cast(resample_t2,sitk.sitkInt16), os.path.join(outpath,patient+'_ScanReg.nii.gz'))
     # print('Resampling time: ', round(time.time() - tic,2),'s')
 
-    return transform, resample_t2, resample_t2_seg
+    return transform, resample_t2
 
+def RegistrationForLandmark(fixed_image_path,moving_image_path):
+
+    # Copy T1 and T2 images to output directory
+    # shutil.copyfile(fixed_image_path, os.path.join(outpath,patient+'_T1.nii.gz'))
+    # shutil.copyfile(moving_image_path, os.path.join(outpath,patient+'_T2.nii.gz'))
+    
+    # Read images and segmentations
+    fixed_image = sitk.ReadImage(fixed_image_path)
+    moving_image = sitk.ReadImage(moving_image_path)
+    
+    resample_approx, TransformParamMap = SimpleElastixApprox(fixed_image, moving_image)
+    Transforms = MatrixRetrieval(TransformParamMap)
+    
+    transform = sitk.Transform()
+    for t in Transforms:
+        transform.AddTransform(t)
+    # Resample images and segmentations using the final transform
+    # tic = time.time()
+    resample_t2 = sitk.Cast(ResampleImage(moving_image, transform),sitk.sitkInt16)
+    
+    return transform, resample_t2
 
 """
 888     888 88888888888 8888888 888       .d8888b.  
