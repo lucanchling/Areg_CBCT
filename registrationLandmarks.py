@@ -14,8 +14,7 @@ def main(args):
         if args.print:
             print("="*70)
             print("T1 scan path: {} \nT2 scan path: {}".format(os.path.basename(data['scanT1']),os.path.basename(data['scanT2'])))
-            if args.reg_lm:
-                print("T2 landmarks path: {}".format(os.path.basename(data['lmT2'])))
+            print("T2 landmarks path: {}".format(os.path.basename(data['lmT2'])))
         # print("Working on patient {}".format(patient))
         else:
             try:
@@ -25,10 +24,9 @@ def main(args):
                 if not os.path.exists(outpath):
                     os.makedirs(outpath)
                 sitk.WriteTransform(transform, os.path.join(outpath,patient+'_matrix_lm.tfm'))
-                sitk.WriteImage(resample_t2, os.path.join(outpath,patient+'_ScanReg.nii.gz'))
-                if args.reg_lm:   
-                    transformedLandmarks = applyTransformLandmarks(LoadOnlyLandmarks(data['lmT2']), transform.GetInverse())
-                    WriteJson(transformedLandmarks, os.path.join(outpath,patient+'_lm_Reg.mrk.json'))
+                # sitk.WriteImage(resample_t2, os.path.join(outpath,patient+'_ScanReg.nii.gz'))
+                transformedLandmarks = applyTransformLandmarks(LoadOnlyLandmarks(data['lmT2']), transform.GetInverse())
+                WriteJson(transformedLandmarks, os.path.join(outpath,patient+'_lm_Reg.mrk.json'))
             
             except KeyError:
                 print("Patient {} does not have both T1 and T2 scans".format(patient))
@@ -38,14 +36,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Voxel Based Registration')
     
-    parser.add_argument('--t1_folder', type=str, help='Path to folder containing input T1 scans',default='/home/luciacev/Desktop/Luc/DATA/AReg_CBCT/NOT WORKING/T1/')
-    parser.add_argument('--t2_folder', type=str, help='Path to folder containing input T2 scans',default='/home/luciacev/Desktop/Luc/DATA/AReg_CBCT/NOT WORKING/T2_Center/')
-    parser.add_argument('--output_dir', type=str, help='Path to folder containing output register T2 scans',default='/home/luciacev/Desktop/Luc/DATA/AReg_CBCT/NOT WORKING/')
+    parser.add_argument('--t1_folder', type=str, help='Path to folder containing input T1 scans',default='/home/luciacev/Desktop/Luc/DATA/AReg_CBCT/JJ/Approach2/Registered/Cranial Base')
+    parser.add_argument('--t2_folder', type=str, help='Path to folder containing input T2 scans',default='/home/luciacev/Desktop/Luc/DATA/AReg_CBCT/JJ/BATES_REGISTERED/Cranial Base')
+    parser.add_argument('--output_dir', type=str, help='Path to folder containing output register T2 scans',default='/home/luciacev/Desktop/Luc/DATA/AReg_CBCT/JJ/BATES_REGISTERED/Cranial Base')
     parser.add_argument("--print", type=bool, help="Print info", default=False)
-    parser.add_argument("--todo", type=str, help="What scan to do", default='')
-    parser.add_argument("--reg_lm", type=bool, help="Whether or not we apply the matrix to the landmark file", default=False)
-    parser.add_argument("--approx", type=bool, help="Whether or not we use the approximate method", default=True)
-    
     args = parser.parse_args()
 
     main(args)
