@@ -48,7 +48,7 @@ def GetPatients(folder_path, time_point='T1', segmentationType=None):
     
     for file in file_list:
         basename = os.path.basename(file)
-        patient = basename.split('_Scan')[0].split('_scan')[0].split('_Or')[0].split('_OR')[0].split('_MAND')[0].split('_MD')[0].split('_MAX')[0].split('_MX')[0].split('_CB')[0].split('_lm')[0].split('_T2')[0].split('_T1')[0].split('_Cl')[0].split('.')[0]
+        patient = basename.split('_Scan')[0].split('_scan')[0].split('_Or')[0].split('_OR')[0].split('_MAND')[0].split('_MD')[0].split('_MAX')[0].split('_MX')[0].split('_CB')[0].split('_lm')[0]#.split('_T2')[0].split('_T1')[0].split('_Cl')[0].split('.')[0]
         
         if patient not in patients:
             patients[patient] = {}
@@ -407,7 +407,7 @@ def SimpleElastixApprox(fixed_image, moving_image):
     parameterMapVector.append(sitk.GetDefaultParameterMap("rigid"))
     elastixImageFilter.SetParameterMap(parameterMapVector)
 
-    elastixImageFilter.SetParameter("MaximumNumberOfIterations", "5000")
+    # elastixImageFilter.SetParameter("MaximumNumberOfIterations", "5000")
     # elastixImageFilter.SetParameter("NumberOfSpatialSamples", "100000")
     
     tic = time.time()

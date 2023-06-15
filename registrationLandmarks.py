@@ -12,9 +12,14 @@ def main(args):
     
     for i,(patient,data) in tqdm(enumerate(patients.items()),total=len(patients)):
         if args.print:
-            print("="*70)
-            print("T1 scan path: {} \nT2 scan path: {}".format(os.path.basename(data['scanT1']),os.path.basename(data['scanT2'])))
-            print("T2 landmarks path: {}".format(os.path.basename(data['lmT2'])))
+            try:
+                print("="*70)
+                print("T1 scan path: {} \nT2 scan path: {}".format(os.path.basename(data['scanT1']),os.path.basename(data['scanT2'])))
+                print("T2 landmarks path: {}".format(os.path.basename(data['lmT2'])))
+            except KeyError:
+                print("Patient {} does not have both T1 and T2 scans".format(patient))
+                continue
+            
         # print("Working on patient {}".format(patient))
         else:
             try:
@@ -24,7 +29,7 @@ def main(args):
                 if not os.path.exists(outpath):
                     os.makedirs(outpath)
                 sitk.WriteTransform(transform, os.path.join(outpath,patient+'_matrix_lm.tfm'))
-                # sitk.WriteImage(resample_t2, os.path.join(outpath,patient+'_ScanReg.nii.gz'))
+                # sitk.Wriprint()teImage(resample_t2, os.path.join(outpath,patient+'_ScanReg.nii.gz'))
                 transformedLandmarks = applyTransformLandmarks(LoadOnlyLandmarks(data['lmT2']), transform.GetInverse())
                 WriteJson(transformedLandmarks, os.path.join(outpath,patient+'_lm_Reg.mrk.json'))
             
