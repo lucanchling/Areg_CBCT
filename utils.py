@@ -66,8 +66,8 @@ def GetPatients(folder_path, time_point='T1', segmentationType=None):
                 patients[patient]['scan'+time_point] = file
 
         if True in [i in basename for i in json_extension]:
-            if time_point == 'T2':
-                patients[patient]['lm'+time_point] = file
+            # if time_point == 'T2':
+            patients[patient]['lm'+time_point] = file
 
     return patients
 
@@ -313,43 +313,6 @@ def ResampleImage(image, transform):
 
     return resampled_image
 
-def CorrectHisto(input_img,min_porcent=0.01,max_porcent = 0.99, i_min=-1500, i_max=4000):
-    """Correct the histogram of the image to have a better contrast"""
-    input_img = sitk.Cast(input_img, sitk.sitkFloat32)
-    img = sitk.GetArrayFromImage(input_img)
-
-
-    img_min = np.min(img)
-    img_max = np.max(img)
-    img_range = img_max - img_min
-    # print(img_min,img_max,img_range)
-
-    definition = 1000
-    histo = np.histogram(img,definition)
-    cum = np.cumsum(histo[0])
-    cum = cum - np.min(cum)
-    cum = cum / np.max(cum)
-
-    res_high = list(map(lambda i: i> max_porcent, cum)).index(True)
-    res_max = (res_high * img_range)/definition + img_min
-
-    res_low = list(map(lambda i: i> min_porcent, cum)).index(True)
-    res_min = (res_low * img_range)/definition + img_min
-
-    res_min = max(res_min,i_min)
-    res_max = min(res_max,i_max)
-
-
-    # print(res_min,res_min)
-
-    img = np.where(img > res_max, res_max,img)
-    img = np.where(img < res_min, res_min,img)
-
-    image = sitk.GetImageFromArray(img)
-    image.CopyInformation(input_img)
-
-    return image
-
 def applyMask(image, mask):
     """Apply a mask to an image."""
     # Cast the image to float32
@@ -501,7 +464,7 @@ def VoxelBasedRegistration(fixed_image_path,moving_image_path,fixed_seg_path,app
     # sitk.WriteImage(sitk.Cast(resample_t2,sitk.sitkInt16), os.path.join(outpath,patient+'_ScanReg.nii.gz'))
     # print('Resampling time: ', round(time.time() - tic,2),'s')
 
-    return transform, resample_t2
+    return transform#, resample_t2
 
 def RegistrationForLandmark(fixed_image_path,moving_image_path):
 
@@ -535,24 +498,6 @@ def RegistrationForLandmark(fixed_image_path,moving_image_path):
 Y88b. .d88P     888       888   888      Y88b  d88P 
  "Y88888P"      888     8888888 88888888  "Y8888P"
 """
-
-def CompareScans(im1, im2):
-    """Compare two segmentations with Dice similarity coefficient, Jaccard similarity coefficient, Intersection over Union, and Hausdorff distance."""
-    # Cast the images to float32
-    im1 = sitk.Cast(im1, sitk.sitkInt16)
-    im2 = sitk.Cast(im2, sitk.sitkInt16)
-
-    # Compute Dice similarity coefficient
-    OverlaFilter = sitk.LabelOverlapMeasuresImageFilter()
-    OverlaFilter.Execute(im1, im2)
-    dice = OverlaFilter.GetDiceCoefficient()        # Goal: 0.7
-    jaccard = OverlaFilter.GetJaccardCoefficient()  # Goal: 0.6
-
-    # Compute Hausdorff distance
-    hausdorff = sitk.HausdorffDistanceImageFilter()
-    hausdorff.Execute(im1, im2)
-    hausdorff = hausdorff.GetHausdorffDistance()
-    return dice,jaccard,hausdorff
 
 def translate(shortname):
     dic = {'CB': 'Cranial Base', 'MAND': 'Mandible', 'MAX': 'Maxilla'}

@@ -1,5 +1,5 @@
 import SimpleITK as sitk
-from utils import WriteJson, LoadOnlyLandmarks, applyTransformLandmarks
+from utils import WriteJson, LoadOnlyLandmarks, applyTransformLandmarks, GetPatients
 
 transform_path = '/home/luciacev/Desktop/Luc/DATA/SOPHIE/14/TB_0014_matrix.tfm'
 transform = sitk.ReadTransform(transform_path)

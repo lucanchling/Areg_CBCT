@@ -43,7 +43,12 @@ def ComputeFinalMatrix(Rotation,Translation):
     for i in range(1,len(Translation)):
         final_translation = final_translation + np.reshape(np.asarray(Translation[i]),(1,3))
 
-    return final_rotation, final_translation
+    # Create the final transform
+    final_transform = sitk.Euler3DTransform()
+    final_transform.SetMatrix(final_rotation.flatten().tolist())
+    final_transform.SetTranslation(final_translation[0].tolist())
+
+    return final_transform
 
 def GetAngleFromRotationMatrix(Rotation):
     """Compute the angles from the rotation matrix"""
