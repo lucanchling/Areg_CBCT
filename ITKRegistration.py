@@ -37,24 +37,23 @@ def ResampleImage(image, transform):
 def MatrixRetrieval(TransformParameterMapObject):
     """Retrieve the matrix from the transform parameter map"""
     Transforms = []
-    
-    for ParameterMap in TransformParameterMapObject.GetParameterMaps():
+    ParameterMap = TransformParameterMapObject.GetParameterMap(0)
 
-        if ParameterMap['Transform'][0] == 'AffineTransform':
-            matrix = [float(i) for i in ParameterMap['TransformParameters']]
-            # Convert to a sitk transform
-            transform = sitk.AffineTransform(3)
-            transform.SetParameters(matrix)
-            Transforms.append(transform)
+    if ParameterMap['Transform'][0] == 'AffineTransform':
+        matrix = [float(i) for i in ParameterMap['TransformParameters']]
+        # Convert to a sitk transform
+        transform = sitk.AffineTransform(3)
+        transform.SetParameters(matrix)
+        Transforms.append(transform)
 
-        elif ParameterMap['Transform'][0] == 'EulerTransform':
-            A = [float(i) for i in ParameterMap['TransformParameters'][0:3]]
-            B = [float(i) for i in ParameterMap['TransformParameters'][3:6]]
-            # Convert to a sitk transform
-            transform = sitk.Euler3DTransform()
-            transform.SetRotation(angleX=A[0], angleY=A[1], angleZ=A[2])
-            transform.SetTranslation(B)
-            Transforms.append(transform)
+    elif ParameterMap['Transform'][0] == 'EulerTransform':
+        A = [float(i) for i in ParameterMap['TransformParameters'][0:3]]
+        B = [float(i) for i in ParameterMap['TransformParameters'][3:6]]
+        # Convert to a sitk transform
+        transform = sitk.Euler3DTransform()
+        transform.SetRotation(angleX=A[0], angleY=A[1], angleZ=A[2])
+        transform.SetTranslation(B)
+        Transforms.append(transform)
 
     
     return Transforms
@@ -66,7 +65,6 @@ def ElastixApprox(fixed_image, moving_image):
     parameter_object = itk.ParameterObject.New()
     default_rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid')
     parameter_object.AddParameterMap(default_rigid_parameter_map)
-    # parameter_object.SetParameter("CompressResultImage", "true")
     parameter_object.SetParameter("WriteResultImage", "false")
     
     elastix_object.SetParameterObject(parameter_object)
@@ -76,9 +74,6 @@ def ElastixApprox(fixed_image, moving_image):
 
     # Execute registration
     elastix_object.UpdateLargestPossibleRegion()
-
-    # Get the results
-    # result_image = elastix_object.GetOutput()
     
     TransParamObj = elastix_object.GetTransformParameterObject()
     
@@ -93,7 +88,6 @@ def ElastixReg(fixed_image, moving_image, fixed_mask, initial_transform=None):
     parameter_object = itk.ParameterObject.New()
     default_rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid')
     parameter_object.AddParameterMap(default_rigid_parameter_map)
-    # parameter_object.SetParameter("CompressResultImage", "true")
     parameter_object.SetParameter("ErodeMask", "true")
     parameter_object.SetParameter("WriteResultImage", "false")
     parameter_object.SetParameter("MaximumNumberOfIterations", "10000")
@@ -110,9 +104,6 @@ def ElastixReg(fixed_image, moving_image, fixed_mask, initial_transform=None):
 
     # Execute registration
     elastix_object.UpdateLargestPossibleRegion()
-
-    # Get the results
-    # result_image = elastix_object.GetOutput()
     
     TransParamObj = elastix_object.GetTransformParameterObject()
     
